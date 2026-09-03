@@ -1,0 +1,41 @@
+name: Ensure login navigation
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-navigation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add login link to main navigation
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          login = '<a href="login.html" class="login-link">เข้าสู่ระบบ</a>'
+          if 'class="login-link"' not in s:
+              s = s.replace('</nav><button class="theme"', login + '</nav><button class="theme"', 1)
+              s = s.replace('.links{display:flex;gap:20px}', '.links{display:flex;gap:20px;align-items:center}.login-link{padding:9px 13px;border-radius:999px;background:var(--coral);color:#fff!important;font-weight:900;opacity:1!important}', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit navigation fix
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix: add login navigation to homepage"
+          git push
